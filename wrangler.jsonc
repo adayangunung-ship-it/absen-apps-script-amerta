@@ -1,0 +1,9 @@
+{
+  // Cloudflare Worker "absen" -> https://absen.adayangunung.workers.dev
+  // Isinya hanya file statis di folder public/ (etalase PWA).
+  "name": "absen",
+  "compatibility_date": "2026-11-01",
+  "assets": {
+    "directory": "./public"
+  }
+}
