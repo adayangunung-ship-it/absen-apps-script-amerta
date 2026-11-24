@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Absensi Pegawai</title>
+<meta name="theme-color" content="#0b5fa5">
+<meta name="description" content="Absensi Pegawai Perumda Air Minum Amerta Dayan Gunung">
+<link rel="manifest" href="/manifest.webmanifest">
+<link rel="icon" href="/icon-192.png">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<style>
+  html,body{margin:0;height:100%;font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;background:#0b2a4a;color:#e8f0fa}
+  .boot{min-height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;padding:24px;box-sizing:border-box;text-align:center}
+  .boot img{width:84px;height:84px;border-radius:22px;box-shadow:0 10px 30px rgba(0,0,0,.35)}
+  .boot h1{font-size:18px;margin:6px 0 0}
+  .boot p{margin:0;font-size:14px;color:#a9c3e0;max-width:320px;line-height:1.5}
+  .sp{width:28px;height:28px;border:3px solid rgba(255,255,255,.25);border-top-color:#fff;border-radius:50%;animation:r 0.9s linear infinite}
+  @keyframes r{to{transform:rotate(360deg)}}
+  .err{display:none}.boot.gagal .err{display:block}.boot.gagal .sp{display:none}
+  .btn{margin-top:8px;border:0;border-radius:12px;padding:12px 20px;font-size:15px;font-weight:700;background:#1d6fd1;color:#fff;cursor:pointer}
+</style>
+</head>
+<body>
+<div class="boot" id="boot">
+  <img src="/icon-192.png" alt="">
+  <h1>Absensi Pegawai</h1>
+  <p id="bootMsg">Memuat aplikasi&hellip;</p>
+  <div class="sp"></div>
+  <div class="err"><button class="btn" type="button" onclick="location.reload()">Coba lagi</button></div>
+</div>
+<script>
+/* ============================================================
+   ETALASE PWA - Absensi Pegawai
+   - Isi aplikasi (Index.html) diambil dari Apps Script lewat API, lalu ditampilkan di halaman ini.
+     Jadi tampilan tetap diedit di editor Apps Script + Deploy; file ini tidak perlu diubah.
+   - Panggilan google.script.run diteruskan ke API (doPost di Api.gs).
+   - Hanya API_URL yang perlu diganti bila alamat /exec berubah.
+   ============================================================ */
+var API_URL = 'https://script.google.com/macros/s/AKfycbz8aV7FSRrKDJvyVXPVz4FSWoO4hI3YkmLzMAjWLMl7t2bfexZJmhpF55AlYOqQdhaY/exec';
+var KEY_HTML = 'absenpwa_html', KEY_VER = 'absenpwa_ver';
+
+/* Pengganti google.script.* (dijalankan juga di dalam halaman aplikasi) */
+function gasShim(API_URL) {
+  function apiCall(fn, args) {
+    return fetch(API_URL, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify({ fn: fn, args: args || [] }) })
+      .then(function (r) { return r.text(); })
+      .then(function (t) {
+        var o; try { o = JSON.parse(t); } catch (e) { throw new Error('Server sedang sibuk atau tidak merespons. Coba lagi.'); }
+        if (!o || !o.ok) throw new Error((o && o.error) || 'Terjadi kesalahan');
+        return o.data;
+      });
+  }
+  function runner(ok, fail, uo) {
+    return new Proxy({}, { get: function (_, k) {
+      if (k === 'withSuccessHandler') return function (h) { return runner(h, fail, uo); };
+      if (k === 'withFailureHandler') return function (h) { return runner(ok, h, uo); };
+      if (k === 'withUserObject') return function (u) { return runner(ok, fail, u); };
+      if (typeof k !== 'string') return undefined;
+      return function () {
+        var a = Array.prototype.slice.call(arguments);
+        apiCall(k, a).then(function (d) { if (ok) ok(d, uo); }, function (e) { if (fail) fail(e, uo); });
+      };
+    } });
+  }
+  function loc() {
+    var p = {}, ps = {};
+    try { new URLSearchParams(location.search).forEach(function (v, k) { p[k] = v; (ps[k] = ps[k] || []).push(v); }); } catch (e) {}
+    var h = location.hash.replace(/^#/, '');
+    try { h = decodeURIComponent(h); } catch (e) {}
+    return { hash: h, parameter: p, parameters: ps };
+  }
+  function urlFor(h) { return location.pathname + location.search + (h ? '#' + h : ''); }
+  window.google = window.google || {};
+  window.google.script = {
+    run: runner(null, null, undefined),
+    url: { getLocation: function (cb) { cb(loc()); } },
+    history: {
+      replace: function (s, p, h) { try { history.replaceState(s || null, '', urlFor(h)); } catch (e) {} },
+      push: function (s, p, h) { try { history.pushState(s || null, '', urlFor(h)); } catch (e) {} },
+      setChangeHandler: function (fn) {
+        var f = function () { fn({ state: history.state, location: loc() }); };
+        window.addEventListener('popstate', f); window.addEventListener('hashchange', f);
+      }
+    },
+    host: { close: function () {}, setHeight: function () {}, setWidth: function () {}, editor: {} }
+  };
+  window.__apiCall = apiCall;
+}
+gasShim(API_URL);
+
+function bootMsg(t, gagal) {
+  var m = document.getElementById('bootMsg'); if (m) m.textContent = t;
+  var b = document.getElementById('boot'); if (b && gagal) b.classList.add('gagal');
+}
+function simpan(html, ver) { try { localStorage.setItem(KEY_HTML, html); localStorage.setItem(KEY_VER, ver); } catch (e) {} }
+function tampil(html) {
+  var sisip = '<link rel="manifest" href="/manifest.webmanifest"><meta name="theme-color" content="#0b5fa5">' +
+    '<link rel="icon" href="/icon-192.png"><link rel="apple-touch-icon" href="/apple-touch-icon.png">' +
+    '<script>(' + gasShim.toString() + ')(' + JSON.stringify(API_URL) + ');<\/script>';
+  html = /<head[^>]*>/i.test(html) ? html.replace(/<head[^>]*>/i, function (m) { return m + sisip; }) : sisip + html;
+  document.open(); document.write(html); document.close();
+}
+/* Ganti halaman HANYA setelah halaman etalase selesai dibaca browser.
+   (Bila dipanggil saat browser masih membaca halaman, isinya tersisip di bawah layar pemuat dan aplikasi tampak macet.) */
+function tampilAman(html) {
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', function () { setTimeout(function () { tampil(html); }, 0); });
+  } else {
+    setTimeout(function () { tampil(html); }, 0);
+  }
+}
+function ambilBaru() {
+  return window.__apiCall('__app', []).then(function (a) { simpan(a.html, a.ver); return a; });
+}
+
+(function mulai() {
+  if ('serviceWorker' in navigator) { try { navigator.serviceWorker.register('/sw.js'); } catch (e) {} }
+  var html = null, ver = null;
+  try { html = localStorage.getItem(KEY_HTML); ver = localStorage.getItem(KEY_VER); } catch (e) {}
+  if (html) {
+    // Tampil seketika dari simpanan; versi baru (bila ada) diunduh diam-diam dan dipakai saat aplikasi dibuka lagi.
+    window.__apiCall('__appVer', []).then(function (v) { if (v && v !== ver) return ambilBaru(); }).catch(function () {});
+    tampilAman(html);
+    return;
+  }
+  var coba = 0;
+  (function unduh() {
+    coba++;
+    bootMsg(coba > 1 ? 'Server sedang ramai, mencoba lagi (' + coba + '/4)…' : 'Memuat aplikasi…');
+    ambilBaru().then(function (a) { tampilAman(a.html); }).catch(function (e) {
+      if (coba < 4) return setTimeout(unduh, 1500 * coba);
+      bootMsg('Aplikasi belum bisa dimuat. Periksa koneksi internet lalu coba lagi. (' + (e && e.message || e) + ')', true);
+    });
+  })();
+})();
+</script>
+</body>
+</html>
