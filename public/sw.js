@@ -1,6 +1,6 @@
 /* Service worker: membuat aplikasi bisa dipasang (PWA) dan halaman depan tetap terbuka saat sinyal lemah.
    Hanya file etalase di domain ini yang disimpan. Panggilan ke server (Apps Script) TIDAK pernah disimpan. */
-const CACHE = 'absen-etalase-v3';
+const CACHE = 'absen-etalase-v4';
 const FILES = ['/', '/index.html', '/manifest.webmanifest', '/icon-192.png', '/icon-512.png', '/icon-maskable-512.png', '/apple-touch-icon.png'];
 
 self.addEventListener('install', function (e) {
